@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <link rel="stylesheet" href="/css/webuploader.css">
+</head>
+<body>
+<div id="uploadfile">
+    <div id="picker" >选择文件</div>
+    <!--用来存放文件信息-->
+    <div id="thelist" class="uploader-list">
+        <table class="table" border="1" cellpadding="0" cellspacing="0" width="100%">
+            <tr class="filelist-head">
+                <th width="5%" class="file-num">序号</th>
+                <th class="file-name">视频名称</th>
+                <th class="file-size">大小</th>
+                <th width="20%" class="file-pro">进度</th>
+                <th class="file-status">状态</th>
+                <th width="20%" class="file-manage">操作</th>
+            </tr>
+        </table>
+    </div>
+    <!--<div id="ctlBtn" class="btn btn-default">开始上传</div>-->
+    <button id="ctlBtn" type="button">开始上传</button>
+</div>
+<script src="/js/jquery-1.8.3.min.js"></script>
+<script src="/dist/webuploader.js"></script>
+<!--<script src="/js/upload_file.js"></script>-->
+<script>
+    $(function(){
+        //视频上传 start
+        var $list = $('#thelist .table'),
+            $btn = $('#ctlBtn');
+        var uploader = WebUploader.create({
+            resize: false, // 不压缩image
+            swf: '/dist/uploader.swf', // swf文件路径
+            server: '/upload', // 文件接收服务端。
+            pick: '#picker', // 选择文件的按钮。可选
+          /*  chunked: true, //是否要分片处理大文件上传
+            chunkSize:2*1024*1024, //分片上传，每片2M，默认是5M*/
+            // auto: true, //选择文件后是否自动上传
+            // chunkRetry : 2, //如果某个分片由于网络问题出错，允许自动重传次数
+            //runtimeOrder: 'html5,flash',
+            // accept: {
+            //   title: 'Images',
+            //   extensions: 'gif,jpg,jpeg,bmp,png',
+            //   mimeTypes: 'image/*'
+            // }
+            duplicate: false //是否支持重复上传
+        });
+        // 当有文件被添加进队列的时候
+        uploader.on( 'fileQueued', function( file ) {
+
+            $list.append('<tr id="'+ file.id +'" class="file-item">'+'<td width="5%" class="file-num">111</td>'+'<td class="file-name">'+ file.name +'</td>'+ '<td width="20%" class="file-size">'+ (file.size/1024/1024).toFixed(1)+'M' +'</td>' +'<td width="20%" class="file-pro">0%</td>'+'<td class="file-status">等待上传</td>'+'<td width="20%" class="file-manage"><a class="stop-btn" href="javascript:;">暂停</a><a class="remove-this" href="javascript:;">取消</a></td>'+'</tr>');
+
+            //暂停上传的文件
+            $list.on('click','.stop-btn',function(){
+                uploader.stop(true);
+            })
+            //删除上传的文件
+            $list.on('click','.remove-this',function(){
+                if ($(this).parents(".file-item").attr('id') == file.id) {
+                    uploader.removeFile(file);
+                    $(this).parents(".file-item").remove();
+                }
+            })
+        });
+
+        //重复添加文件
+        var timer1;
+        uploader.onError = function(code){
+            clearTimeout(timer1);
+            timer1 = setTimeout(function(){
+                layer.msg('该文件已存在');
+            },250);
+        }
+
+        // 文件上传过程中创建进度条实时显示
+        uploader.on( 'uploadProgress', function( file, percentage ) {
+            $("td.file-pro").text("");
+            var $li = $( '#'+file.id ).find('.file-pro'),
+                $percent = $li.find('.file-progress .progress-bar');
+
+            // 避免重复创建
+            if ( !$percent.length ) {
+                $percent = $('<div class="file-progress progress-striped active">' +
+                    '<div class="progress-bar" role="progressbar" style="width: 0%">' +
+                    '</div>' +
+                    '</div>' + '<br/><div class="per">0%</div>').appendTo( $li ).find('.progress-bar');
+            }
+
+            $li.siblings('.file-status').text('上传中');
+            $li.find('.per').text((percentage * 100).toFixed(2) + '%');
+
+            $percent.css( 'width', percentage * 100 + '%' );
+        });
+        // 文件上传成功
+        uploader.on( 'uploadSuccess', function( file ) {
+            $( '#'+file.id ).find('.file-status').text('已上传');
+        });
+
+        // 文件上传失败，显示上传出错
+        uploader.on( 'uploadError', function( file ) {
+            $( '#'+file.id ).find('.file-status').text('上传出错');
+        });
+        // 完成上传完后将视频添加到视频列表，显示状态为：转码中
+        uploader.on( 'uploadComplete', function( file ) {
+            // $( '#'+file.id ).find('.file-progress').fadeOut();
+        });
+
+        $btn.on('click', function () {
+            alert(123);
+            if ($(this).hasClass('disabled')) {
+                return false;
+            }
+            uploader.upload();
+        });
+    })
+</script>
+</body>
+</html>
